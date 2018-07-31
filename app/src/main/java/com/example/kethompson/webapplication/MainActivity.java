@@ -1,5 +1,7 @@
 package com.example.kethompson.webapplication;
 
+import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
@@ -24,21 +26,24 @@ public class MainActivity extends AppCompatActivity {
         URL url = null;
         try {
             url = new URL("https://www.android.com");
-            downloadUrl(url);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+            downloadUrl downloadUrl = new downloadUrl();
+            downloadUrl.execute(url);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
 
-    private String downloadUrl(URL url) throws IOException {
+//    private String downloadUrl(URL url) throws IOException {
+    private class downloadUrl extends AsyncTask<URL, Void, String> {
+
+    @Override
+    protected String doInBackground(URL... urls) {
         InputStream stream = null;
         HttpURLConnection connection = null;
         String result = null;
         try {
-            connection = (HttpsURLConnection) url.openConnection();
+            connection = (HttpsURLConnection) urls[0].openConnection();
             connection.setReadTimeout(3000);
             connection.setConnectTimeout(3000);
             connection.setRequestMethod("GET");
@@ -54,18 +59,33 @@ public class MainActivity extends AppCompatActivity {
                 // Converts Stream to String with max length of 500.
                 result = readStream(stream, 500);
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
             System.out.println(e.toString());
         } finally {
             // Close Stream and disconnect HTTPS connection.
             if (stream != null) {
-                stream.close();
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             if (connection != null) {
                 connection.disconnect();
             }
         }
         return result;
+    }
+
+    @Override
+    protected void onPostExecute(String result) {
+        super.onPostExecute(result);
+        System.out.println("we have reached the onPostExecute " + result);
+        Bundle bundle = new Bundle();
+        bundle.putString("html",result);
+
+        Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+        startActivity(intent);
     }
 
     public String readStream(InputStream stream, int maxReadSize)
@@ -84,5 +104,5 @@ public class MainActivity extends AppCompatActivity {
         }
         return buffer.toString();
     }
-    
+}
 }
